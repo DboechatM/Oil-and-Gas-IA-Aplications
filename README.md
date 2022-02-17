@@ -13,3 +13,4 @@ Here i try to develop aplications in O&G area. It's in construct and every week 
 2. [Estimate multiphase flow rate in producing wells - **Forecasting Oil Production**](https://github.com/DboechatM/Oil-and-Gas-IA-Aplications/blob/main/LSTM_SISO.ipynb)
 3. Well Ciment Quality Detection *[soon]*
 4. Drilling params otimization *[soon]*
+5. Safety Helmet Detection - Computer Vision (YOLO/OpenCV) *[soon]*
