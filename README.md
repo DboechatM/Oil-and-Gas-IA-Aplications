@@ -9,4 +9,7 @@ Accessed by Microsoft Azure Storage Explorer
 Here i try to develop aplications in O&G area. It's in construct and every week will be updated.
 
 ## Projects Developed
-1. [Estimate multiphase flow rate in producing wells - **Forecasting Oil Production**](https://app.uff.br/riuff/handle/1/22026)
+1. [Forecasting Oil and Gas Properties](https://github.com/DboechatM/Documentacao-TCC)
+2. [Estimate multiphase flow rate in producing wells - **Forecasting Oil Production**](https://github.com/DboechatM/Oil-and-Gas-IA-Aplications/blob/main/LSTM_SISO.ipynb)
+3. Well Ciment Quality Detection *[soon]*
+4. Drilling params otimization *[soon]*
