@@ -9,7 +9,7 @@ The dataset comprises approximately 40,000 files from the Volve field, which was
 Here i try to develop aplications in O&G area. It's in construct and every week will be updated.
 
 ## Projects Developed
-1. [Forecasting Oil and Gas Properties](https://github.com/DboechatM/Documentacao-TCC)
+1. [Forecasting Oil and Gas Properties - LSTM/GRU/AutoEncoder](https://github.com/DboechatM/Documentacao-TCC)
 2. [Estimate multiphase flow rate in producing wells - **Forecasting Oil Production**](https://github.com/DboechatM/Oil-and-Gas-IA-Aplications/blob/main/LSTM_SISO.ipynb)
 3. Well Ciment Quality Detection *[soon]*
 4. Drilling params otimization *[soon]*
