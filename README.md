@@ -1,6 +1,6 @@
 # Oil-and-Gas-IA-Aplications
 
-[![volvo][image]][https://www.equinor.com/content/dam/statoil/image/how-and-why/digitalisation/volve-platform-1-1.jpg.transform/extra-large/image.jpg]
+![volvo][image][https://www.equinor.com/content/dam/statoil/image/how-and-why/digitalisation/volve-platform-1-1.jpg.transform/extra-large/image.jpg]
 
 The dataset comprises approximately 40,000 files from the Volve field, which was in production from 2008 to 2016. The data has been released to give students and scientists a realistic case to study.
 
