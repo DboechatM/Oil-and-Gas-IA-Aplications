@@ -1,0 +1,662 @@
+% SAFE formulation for cylindrical structures
+% Case: Stress-free hollow cylinder 
+% An exact analytical solution ein? in the circumferential direction. 
+% Exact analytical harmonic solutions are used in the ? and z directions. 
+% The finite element approximation reduces to only one dimension, r. 
+
+clear; close; clc;
+
+% Traction-Free boundary conditions on the top and the bottom surfaces
+% Eingenvalue problem in the global coordinate system: 
+% (K1 + ikK2 + k^2K3 - w^2M)Q = 0 
+% Introducing a unitary transformation matrix T:
+% (K1 + kK2^ + k^2K3 - w^2M)Q^ = 0
+% where K2^ = TtK2T/-i
+% and Q^ = TQ
+% First-order eigensystem
+% [A - kB][Q^ kQ^] = 0
+% A = [0 K1 - w^2M; K1 - w^2M K2^]
+% B = [K1 - w^2M 0; 0 -K3]
+
+% Problema a ser resolvido: 
+% Problema de autovalor generalizado:
+% eig(A,B)
+
+% K1e = Integral(2 pi r B1t C B1 dr)
+% K2e = Integral(2 pi r (B1t C B2 - B2t C B1) dr)
+% K3e = Integral(2 pi r B2t C B2 dr)
+% Me = Integral(2 pi r ro Nt N dr)
+
+
+ 
+
+% Matriz constitutiva (matriz C)
+% Constitutive Matrix C
+% -----------------------------------
+% Propriedades de diferentes materiais
+% -----------------------------------
+
+% -----------------------------------
+% Material: aluminio
+% MÃ³dulo elÃ¡stico (GPa / 10e9N/m2))
+% E = 55.28
+% Coeficiente de Poisson (adimensional)
+% Nu = 0.345
+% Densidade (kg/m3)
+% ro = 2.7e-6
+% -----------------------------------
+% Material: aÃ§o (steel)
+% MÃ³dulo elÃ¡stico (GPa / 10e9N/m2))
+% E = 193
+% Coeficiente de Poisson (adimensional)
+% Nu = 0.27
+% Densidade (kg/m3)
+% ro = 7.86e-6 
+% -----------------------------------
+
+
+syms E Nu;
+C = E/((1+Nu)*(1-2*Nu))*[1-Nu,Nu,Nu,0,0,0;
+    Nu,1-Nu,Nu,0,0,0;
+    Nu,Nu,1-Nu,0,0,0;
+    0,0,0,(1-2*Nu)/2,0,0;
+    0,0,0,0,(1-2*Nu)/2,0;
+    0,0,0,0,0,(1-2*Nu)/2];
+
+% Calculo da matriz B1
+% Calculo da matriz de elemento K1
+
+syms r re r2 r1 n;
+re = r2 - r1;
+dN1dr = -1/re;
+dN2dr = 1/re;
+N1 =(r2 - r)/re;
+N2 =(r - r1)/re;
+N = [N1 0 0 N2 0 0;
+     0 N1 0 0 N2 0;
+     0 0 N1 0 0 N2];
+B1 = [dN1dr 0 0 dN2dr 0 0;N1/r i*n*N1/r 0 N2/r i*n*N2/r 0;
+    0 0 0 0 0 0;
+    0 0 i*n*N1/r 0 0 i*n*N2/r;
+    0 0 dN1dr 0 0 dN2dr;
+    i*n*N1/r dN1dr - N1/r 0 i*n*N2/r dN2dr - N2/r 0];
+B1T = transpose (B1);
+
+B1TCB1 = B1T*C*B1;
+
+syms pi;
+INTK1 = B1TCB1*2*pi*r;
+
+
+% Calculo da matriz de elemento K2
+
+B2 = [0 0 0 0 0 0;
+    0 0 0 0 0 0;
+    0 0 N1 0 0 N2;
+    0 N1 0 0 N2 0;
+    N1 0 0 N2 0 0;
+    0 0 0 0 0 0];
+B1TCB2 = transpose(B1)*C*B2;
+B2TCB1 = transpose(B2)*C*B1;
+B1TCB2_B2TCB1 = B1TCB2 - B2TCB1;
+INTK2 = B1TCB2_B2TCB1*2*pi*r;
+
+
+% Calculo da matriz de elemento K3
+B2T = transpose(B2);
+B2TCB2 = B2T*C*B2;
+INTK3 = B2TCB2*r*2*pi;
+
+
+% Calculo da matriz de elemento M
+
+syms ro;
+NT = transpose(N);
+roNTN = ro*NT*N;
+INTM = roNTN*r*2*pi;
+
+assume(E > 0.0);
+assume(Nu > 0.0);
+assume(r1 > 0.0);
+assume(r2 > 0.0);
+assume(n > 0);
+assume(re > 0.0);
+assume(ro > 0.0);
+assume(r > 0.0);
+
+
+ for c1 = 1:6
+    for c2 = 1:6
+        K1(c2,c1) = int(INTK1(c2,c1),r,r1,r2);
+    end
+  end
+
+ for c1 = 1:6
+    for c2 = 1:6
+        K2(c2,c1) = int(INTK2(c2,c1),r,r1,r2);
+    end
+ end 
+ 
+  for c1 = 1:6
+    for c2 = 1:6
+        K3(c2,c1) = int(INTK3(c2,c1),r,r1,r2);
+    end
+  end 
+ 
+ for c1 = 1:6
+    for c2 = 1:6
+        M(c2,c1) = int(INTM(c2,c1),r,r1,r2);
+    end
+ end   
+  
+ 
+ for f1 = 1:33
+    for f2 = 1:33 % 3 X nÃºmero de nÃ³s 
+    KG1(f2,f1) = 0.0;
+    KG2(f2,f1) = 0.0;
+    KG3(f2,f1) = 0.0;
+    MG(f2,f1) = 0.0;
+    end
+ end 
+
+
+ % CALCULO DAS MATRIZES GLOBAIS KG1 KG2 KG3 E MG
+for simu = 1:2 %loop para simulação de 100 tamanhos de espessura
+
+%-----------------------
+% K1 KG1
+%-----------------------
+
+% l3 = 5.0e-3;
+l3 = 30.0e-2 + (simu-1)*2.0e-4;
+% te = 0.1e-3;
+te = 3.0e-3 - (simu-1)*2.0e-5; %tamanho do elemento
+l4 = 0;  % contador do loop da matriz global
+
+d1 = 1;
+d2 = 3;
+
+
+ for c3 = 1:10
+
+       
+     for c1 = d1:d2
+        for c2 = d1:d2
+    l1 = l3;  
+    l2 = l1 + te;  
+ 
+ e = subs(K1(c1-l4*3,c2-l4*3),{E,Nu,r1,r2,re,n,pi},{193e+9,0.27,l1,l2,te,1,3.1416});
+ e1 = double(e);
+ disp(e1)
+ KG1(c1,c2) = KG1(c1,c2) + e1;
+        end
+    end
+    for c1 = d1:d2
+        for c2 = d1+3:d2+3
+            
+ e = subs(K1(c1-l4*3,c2-l4*3),{E,Nu,r1,r2,re,n,pi},{193e+9,0.27,l1,l2,te,1,3.1416});
+ e1 = double(e);
+ disp(e1)
+ KG1(c1,c2) = e1;            
+ 
+        end
+    end
+    for c1 = d1+3:d2+3
+        for c2 = d1:d2+3
+       e = subs(K1(c1-l4*3,c2-l4*3),{E,Nu,r1,r2,re,n,pi},{193e+9,0.27,l1,l2,te,1,3.1416});
+       e1 = double(e);
+       disp(e1)
+       KG1(c1,c2) = e1;     
+
+        end
+    end
+    d1 = d1 + 3;
+    d2 = d2 + 3;    
+    
+ l3 = l2;
+ l4 = l4 + 1; % contador do loop da matriz global
+ end
+
+ 
+% --------------------------------------- 
+% K2 KG2
+% ---------------------------------------
+
+l3 = 30.0e-2+ (simu-1)*2.0e-4;
+%l3 = 5.0e-3;
+l4 = 0.0;
+d1 = 1;
+d2 = 3;
+
+
+
+for c3 = 1:10 
+ for c1 = d1:d2
+        for c2 = d1:d2
+
+    l1 = l3;  
+    l2 = l1 + te;  
+
+ e = subs(K2(c1-l4*3,c2-l4*3),{E,Nu,r1,r2,re,n,pi},{193e+9,0.27,l1,l2,te,1,3.1416});
+ e1 = double(e);
+ disp(e1)
+ KG2(c1,c2) = KG2(c1,c2) + e1;
+        end
+ end
+    for c1 = d1:d2
+        for c2 = d1+3:d2+3
+            
+ e = subs(K2(c1-l4*3,c2-l4*3),{E,Nu,r1,r2,re,n,pi},{193e+9,0.27,l1,l2,te,1,3.1416});
+ e1 = double(e);
+ disp(e1)
+ KG2(c1,c2) = e1;            
+ 
+        end
+    end
+    for c1 = d1+3:d2+3
+        for c2 = d1:d2+3
+       e = subs(K2(c1-l4*3,c2-l4*3),{E,Nu,r1,r2,re,n,pi},{193e+9,0.27,l1,l2,te,1,3.1416});
+       e1 = double(e);
+       disp(e1)
+       KG2(c1,c2) = e1;     
+
+        end
+    end
+    d1 = d1 + 3;
+    d2 = d2 + 3;
+
+ l3 = l2;
+ l4 = l4 + 1;
+end 
+ 
+% ---------------------------------------
+% K3 KG3
+% ---------------------------------------
+
+l3 = 30.0e-2+ (simu-1)*2.0e-4;
+% l3 = 5.0e-3; 
+l4 = 0;
+d1 = 1;
+d2 = 3;
+
+
+for c3 = 1:10 
+ for c1 = d1:d2
+        for c2 = d1:d2
+
+    l1 = l3;  
+    l2 = l1 + te;  
+ 
+ e = subs(K3(c1-l4*3,c2-l4*3),{E,Nu,r1,r2,re,n,pi},{193e+9,0.27,l1,l2,te,1,3.1416});
+ e1 = double(e);
+ disp(e1)
+ KG3(c1,c2) = KG3(c1,c2) + e1;
+        end
+ end
+    for c1 = d1:d2
+        for c2 = d1+3:d2+3
+            
+ e = subs(K3(c1-l4*3,c2-l4*3),{E,Nu,r1,r2,re,n,pi},{193e+9,0.27,l1,l2,te,1,3.1416});
+ e1 = double(e);
+ disp(e1)
+ KG3(c1,c2) = e1;            
+ 
+        end
+    end
+    for c1 = d1+3:d2+3
+        for c2 = d1:d2+3
+       e = subs(K3(c1-l4*3,c2-l4*3),{E,Nu,r1,r2,re,n,pi},{193e+9,0.27,l1,l2,te,1,3.1416});
+       e1 = double(e);
+       disp(e1)
+       KG3(c1,c2) = e1;     
+
+        end
+    end
+    d1 = d1 + 3;
+    d2 = d2 + 3; 
+    
+ l3 = l2;
+ l4 = l4 + 1;
+end 
+
+
+% ---------------------------------------
+% M MG
+% ---------------------------------------
+
+l3 = 30.0e-2+ (simu-1)*2.0e-4;
+% l3 = 5.0e-3; 
+l4 = 0;
+d1 = 1;
+d2 = 3;
+
+ 
+for c3 = 1:10 
+ for c1 = d1:d2
+        for c2 = d1:d2
+
+    l1 = l3;  
+    l2 = l1 + te;  
+
+ e = subs(M(c1-l4*3,c2-l4*3),{E,Nu,r1,r2,re,n,pi,ro},{193e+9,0.27,l1,l2,te,1,3.1416,7.86e+3});
+ e1 = double(e);
+ disp(e1)
+ MG(c1,c2) = MG(c1,c2) + e1;
+        end
+ end
+    for c1 = d1:d2
+        for c2 = d1+3:d2+3
+            
+ e = subs(M(c1-l4*3,c2-l4*3),{E,Nu,r1,r2,re,n,pi,ro},{193e+9,0.27,l1,l2,te,1,3.1416,7.86e+3});
+ e1 = double(e);
+ disp(e1)
+ MG(c1,c2) = e1;            
+ 
+        end
+    end
+    for c1 = d1+3:d2+3
+        for c2 = d1:d2+3
+       e = subs(M(c1-l4*3,c2-l4*3),{E,Nu,r1,r2,re,n,pi,ro},{193e+9,0.27,l1,l2,te,1,3.1416,7.86e+3});
+       e1 = double(e);
+       disp(e1)
+       MG(c1,c2) = e1;     
+
+        end
+    end
+    d1 = d1 + 3;
+    d2 = d2 + 3;
+
+  
+ l3 = l2;
+ l4 = l4 + 1;
+end 
+
+
+% Salva as matrizes globais em arquivos .txt
+
+dlmwrite('KG1.txt',KG1,'delimiter', '\t', 'precision', '%.6f','newline','pc'); % Salva
+dlmwrite('KG2.txt',KG2,'delimiter', '\t', 'precision', '%.6f','newline','pc'); % Salva 
+dlmwrite('KG3.txt',KG3, 'delimiter', '\t', 'precision', '%.6f','newline','pc'); % Salva 
+dlmwrite('MG.txt',MG, 'delimiter', '\t', 'precision', '%.6f','newline','pc'); % Salva 
+
+% Matriz de transformaÃ§Ã£o T (elimina i em termo do sistema que contÃ©m KG2)
+
+for c1 = 1:33
+   for c2 = 1:33
+       if c1 == c2
+           if round(c1/3) == c1/3
+           T(c1,c2) = 1i;    
+           else
+         T(c1,c2) = 1.0;      
+           end    
+       end           
+   end    
+end    
+       
+% Calculo de K2 sem i
+
+KG2_T = (conj(T)*KG2*T)/(-1i);
+
+% Autovalores e escolha de comprimentos de onda
+
+W0 = 0.0;
+W1 = 0.0;
+% g2 = 0;
+% W = 500e+3; (valor para teste do codigo)
+
+% for f = 1:500;
+for f = 1:1499
+
+% Frequencia
+
+ W1 = W1 + W0; %(hertz)
+  freq(f) = W1;
+% freq(f) = (f-1)*100.00;
+% w = 2*3.1416*freq(f);
+% Calculo das matrizes A e B
+
+
+for f1 = 1:33
+    for f2 = 1:33
+     Z(f1,f2) = 0.0;   
+    end
+end
+
+W = freq(f)*2*3.1416;
+A = [Z KG1-(W^2)*MG; KG1-(W^2)*MG KG2_T];
+
+B = [KG1-(W^2)*MG Z; Z -KG3];
+
+
+% Calculo dos autovalores
+
+D = eig(A,B);
+
+
+% for g1 = 1:66
+% if imag(D(g1)) == 0.0 
+% if real(D(g1)) > 0.0
+    %g2 = g2 + 1;
+%     lamda(g1) =  D(g1);
+%    freq(g1) = f;
+% else 
+    
+% end
+% end
+% end
+
+ 
+for g3 = 1:66
+    D1(f,g3) = D(g3);
+    
+    
+    
+    
+    dlmwrite('autovalores.txt',D(g3),'delimiter', '\t', 'precision', '%.6f','newline','pc'); % Salva autovaloes
+end
+W0 = 1.0e+02;
+end
+
+
+
+% Grafico de frequencia x espessura em funÃ§Ã£o da espessura / comprimento de
+% onda
+for f = 1:1499
+for g3 = 1:66
+     if abs(imag((D1(f,g3)))) <= 0.9e-4 
+    % if imag((D1(f,g3))) == 0.0
+    if real(D1(f,g3)) > 0.0
+    %g2 = g2 + 1;
+    lamda(f,g3) = real(D1(f,g3));
+    % freq(g3) = f;
+     else   % (tirei) 
+     lamda(f,g3) = 0.0; % (tirei)
+end    
+    end    
+    % dlmwrite('autovalores.txt',D(g3),'delimiter', '\t', 'precision', '%.6f','newline','pc'); % Salva autovalores
+end
+end
+
+% for g4 = 1:50
+%  if  lamda(g4,60) > 3.0e+3
+%      lamda1(g4) = lamda(g4,60);
+% else
+%  end
+% end
+
+% for g4 = 1:50
+ %    if lamda(g4,64) > 3.0e+3
+ %        lamda1(g4) = lamda(g4,64);
+%     else
+%     end
+% end
+
+% for g4 = 1:50
+ % if lamda(g4,65) > 3.0e+3
+%        lamda1(g4) = lamda(g4,65);
+ %    else
+%     end
+ % end
+
+% for g4 = 1:50
+ %    if lamda(g4,65) > 1.0e+3
+%         if lamda(g4,65) < 3.0e+3
+ %         lamda2(g4) = lamda(g4,65);
+  %       else
+ %        end
+%     end
+% end
+
+% for g4 = 1:50
+%    if lamda(g4,66) > 3.0e+3
+ %       lamda1(g4) = lamda(g4,66);
+%     else
+%     end
+% end
+
+% for g4 = 1:50
+%     if  lamda(g4,66) > 1.0e+3
+%         if lamda(g4,66) < 3.0e+3
+%         lamda2(g4) = lamda(g4,66);
+%         else
+%         end
+ %    end
+% end
+esp = te*10;
+% lamda = lamda*0.03;
+lamda = lamda*esp*(1.0/(2.0*3.1416)); % teste 2
+%ex_plot_06_legendas
+% x=1:1:50; 
+% x=freq*1.0e-6*te;
+x = freq*1e-06*esp*1e+03; %1.0e-03 Ã© para ver o que estÃ¡ acontecendo com a escala
+y001=lamda(:,1);
+y002=lamda(:,2);
+y003=lamda(:,3);
+y004=lamda(:,4);
+y005=lamda(:,5);
+y006=lamda(:,6);
+y007=lamda(:,7);
+y008=lamda(:,8);
+y009=lamda(:,9);
+y0010=lamda(:,10);
+y0011=lamda(:,11);
+y0012=lamda(:,12);
+y0013=lamda(:,13);
+y0014=lamda(:,14);
+y01=lamda(:,15);
+y02=lamda(:,16);
+y03=lamda(:,17);
+y04=lamda(:,18);
+y05=lamda(:,19);
+y06=lamda(:,20);
+y07=lamda(:,21);
+y08=lamda(:,22);
+y09=lamda(:,23);
+y010=lamda(:,24);
+y011=lamda(:,25);
+y012=lamda(:,26);
+y013=lamda(:,27);
+y014=lamda(:,28);
+y015=lamda(:,29);
+y016=lamda(:,30);
+y017=lamda(:,31);
+y018=lamda(:,32);
+y019=lamda(:,33);
+y020=lamda(:,34);
+y021=lamda(:,35);
+y022=lamda(:,36);
+y023=lamda(:,37);
+y1=lamda(:,38);
+y2=lamda(:,39);
+y3=lamda(:,40);
+y4=lamda(:,41);
+y5=lamda(:,42);
+y6=lamda(:,43);
+y7=lamda(:,44);
+y8=lamda(:,45);
+y9=lamda(:,46);
+y10=lamda(:,47);
+y11=lamda(:,48);
+y12=lamda(:,49);
+y13=lamda(:,50);
+y14=lamda(:,51);
+y15=lamda(:,52);
+y16=lamda(:,53);
+y17=lamda(:,54);
+y18=lamda(:,55);
+y19=lamda(:,56);
+y20=lamda(:,57);
+y21=lamda(:,58);
+y22=lamda(:,59);
+y23=lamda(:,60);
+y24=lamda(:,61);
+y25=lamda(:,62);
+y26=lamda(:,63);
+y27=lamda(:,64);
+y28=lamda(:,65);
+y29=lamda(:,66);
+
+
+% for g5 = 1:50
+%     y11(g5) = 1e-3*(1/y1(g5));
+% end
+% for g5 = 1:50
+ %    y22(g5) = 1e-3*(1/y2(g5));
+% end
+% for g5 = 1:50
+%    y33(g5) = 1e-3*(1/y3(g5));
+% end
+% for g5 = 1:50
+%     y44(g5) = 1e-3*(1/y4(g5));
+% end
+% for g5 = 1:50
+%     y55(g5) = 1e-3*(1/y5(g5));
+% end
+% for g5 = 1:50
+%     y66(g5) = 1e-3*(1/y6(g5));
+% end
+% for g5 = 1:50
+%     y77(g5) = 1e-3*(1/y7(g5));
+% end
+% for g5 = 1:50
+%     y88(g5) = 1e-3*(1/y8(g5));
+% end
+% for g5 = 1:50
+ %    y99(g5) = 1e-3*(1/y9(g5));
+% end
+% for g5 = 1:50
+%     y1010(g5) = 1e-3*(1/y10(g5));
+% end
+
+% x3=1:1:50;
+% y3=x3.^2-10.*x3+15;
+ 
+plot (y001,x,".",y002,x,".",y003,x,".",y004,x,".",y005,x,".",y006,x,".",y007,x,".",y008,x,".",y009,x,".",y009,x,".",y0010,x,".",y0011,x,".",y0012,x,".",y0013,x,".",y0014,x,".", ...
+   y01,x,".", y02,x,".",y03,x,".",y04,x,".",y05,x,".",y06,x,".",y07,x,".",y08,x,".",y09,x,".",y010,x,".", ...
+      y011,x,".",y012,x,".",y013,x,".",y014,x,".",y015,x,".",y016,x,".",y017,x,".",y018,x,".", ...
+      y019,x,".",y020,x,'.',y021,x,".",y022,x,".",y023,x,".",y1,x,".",y2,x,".",y3,x,".",y4,x,".",y5,x,".",y6,x,".",y7,x,".",y8,x,".", ...
+      y9,x,".", ...
+     y10,x,".",y11,x,".",y12,x,".",y13,x,".",y14,x,".",y15,x,".",y16,x,".",y17,x,".",y18,x,".", ...
+      y19,x,".",y20,x,'.',y21,x,".",y22,x,".",y23,x,".",y24,x,".",y25,x,".",y26,x,".", ...
+      y27,x,".",y28,x,".",y29,x,".");
+ 
+title ('Espectro de freq de um cilindro isot (n=1,R/h = 11)');
+xlabel ('numero de onda,k/2PI, 1/lamda (m-1 )vezes thickness (h) m');
+ylabel ('Freq. (MHz)vezes thickness (h) mm');
+
+ ylim([0 5]);
+ xlim([0 2.0]);
+% xticks("manual")
+ 
+
+ 
+% legend ('modo1 ', 'modo2', 'modo3', 'modo4','modo5', 'modo6', 'modo7', 'modo8', 'modo9', 'modo10','Parabola', ...
+% 
+% 'location', 'bestoutside');
+ 
+grid on;
+
+lamda1(:,:,simu) = lamda;
+x1(:,simu) = x;
+
+end
